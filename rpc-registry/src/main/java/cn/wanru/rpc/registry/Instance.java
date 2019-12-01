@@ -1,9 +1,11 @@
 package cn.wanru.rpc.registry;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ForkJoinPool;
 
 import static cn.wanru.rpc.registry.Constants.GROUP_DEFAULT;
 import static cn.wanru.rpc.registry.Constants.STATUS_UP;
@@ -29,6 +31,8 @@ public class Instance {
     private String group;
 
     private String status;
+
+    private float weight;
 
     private long lastUpdateTime;
 
@@ -80,6 +84,14 @@ public class Instance {
         return status;
     }
 
+    public float getWeight() {
+        return weight;
+    }
+
+    public void setWeight(float weight) {
+        this.weight = weight;
+    }
+
     public void setStatus(String status) {
         this.status = status;
     }
@@ -100,9 +112,11 @@ public class Instance {
         this.metadata = metadata;
     }
 
-
     // endregion
 
+    public void addMetadata(String key, String value) {
+        this.metadata.put(key, value);
+    }
 
     @Override
     public String toString() {
@@ -113,6 +127,7 @@ public class Instance {
         sb.append(", port=").append(port);
         sb.append(", group='").append(group).append('\'');
         sb.append(", status='").append(status).append('\'');
+        sb.append(", weight=").append(weight);
         sb.append(", lastUpdateTime=").append(lastUpdateTime);
         sb.append(", metadata=").append(metadata);
         sb.append('}');
@@ -134,6 +149,10 @@ public class Instance {
         private String group = GROUP_DEFAULT;
 
         private String status = STATUS_UP;
+
+        private float weight = 0;
+
+        private Map<String, String> metadata = Maps.newHashMap();
 
         InstanceBuilder() {
             this.ip = localIp();
@@ -159,7 +178,18 @@ public class Instance {
             return this;
         }
 
+        public InstanceBuilder weight(float weight) {
+            this.weight = weight;
+            return this;
+        }
+
+        public InstanceBuilder metadata(String key, String value) {
+            metadata.put(key, value);
+            return this;
+        }
+
         public Instance build() {
+            Preconditions.checkNotNull(serviceName);
             Preconditions.checkNotNull(ip);
             Preconditions.checkState(port > 0);
 
@@ -170,7 +200,9 @@ public class Instance {
             instance.serviceName = serviceName;
             instance.status = status;
             instance.group = group;
+            instance.weight = weight;
             instance.lastUpdateTime = System.currentTimeMillis();
+            instance.metadata.putAll(this.metadata);
 
             return instance;
         }

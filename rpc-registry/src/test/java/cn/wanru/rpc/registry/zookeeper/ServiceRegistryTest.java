@@ -52,6 +52,8 @@ public class ServiceRegistryTest {
             .port(10001)
             .build();
         registry.register(instance);
+
+        System.in.read();
     }
 
 }
